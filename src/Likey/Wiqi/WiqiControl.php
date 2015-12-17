@@ -202,7 +202,7 @@ class WiqiControl
             
             foreach( $options as $option ) {
                 if( in_array( $option[0], array_keys( $this->propOptions[$prop]['params'] ) ) ) {
-                    $this->queryOptions[$this->propOptions[$prop]['prefix'] . $option[0]] = $option[1];
+                    $this->queryOptions[$this->propOptions[$prop]['prefix'] . $option[0]] = (string)$option[1];
                 }
             }
         }
