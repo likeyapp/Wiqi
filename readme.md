@@ -2,12 +2,12 @@
 
 ### About 
 
-This project is a WIkipedia Query Interface for Laravel 5. It makes it easy to perform certain Wikipedia API Queries.
+This project is a Wikipedia Query Interface for Laravel 5. 
+It makes it easy to perform the "action=query" param on the Wikipedia API.
 
 ### Installation
 
-Begin by installing this package through Composer.
-
+Composer:
 ```js
 {
     "require": {
@@ -17,7 +17,4 @@ Begin by installing this package through Composer.
 ```
 
 ### Usage
-
-
-### Credits
 
