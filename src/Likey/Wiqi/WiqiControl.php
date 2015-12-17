@@ -44,7 +44,7 @@ class WiqiControl
             'prefix' => 'ex',
             'params' => array(
                 'chars' => ['type' => 'int'],
-                'sentances' => ['type' => 'int'],
+                'sentences' => ['type' => 'int'],
                 'limit' => ['type' => 'int'],
                 'intro' => ['type' => 'bool'],
                 'plaintext' => ['type' => 'bool'],
@@ -155,9 +155,14 @@ class WiqiControl
         return $this->get();
     }
     
-    public function get()
+    public function getSourceResponse()
     {
         return file_get_contents( $this->getQueryUrl() );
+    }
+
+    public function get()
+    {
+        return json_decode($this->getSourceResponse());
     }
     
     public function getQueryUrl()
@@ -179,15 +184,23 @@ class WiqiControl
     {
         return( !in_array( $format, $this->formatOptions ) ? false : $this->queryOptions["format"] = $format );
     }
+
+    public function setTitles( $titles )
+    {
+        return $this->queryOptions["titles"] = $titles;
+    }
     
     public function setProp( $prop, $options )
     {
         if( in_array( $prop, array_keys( $this->propOptions ) ) ) {
-            $this->queryOptions['props']+= '|' . $prop;
+            if (empty($this->queryOptions['prop'])){
+                $this->queryOptions['prop'] = '';
+            }
+            $this->queryOptions['prop'] += (empty($this->queryOptions['prop'])?'':'|') . $prop;
             
             foreach( $options as $option ) {
                 if( in_array( $option[0], array_keys( $this->propOptions[$prop]['params'] ) ) ) {
-                    $this->queryOptions[$this->propOptions[$prop]['params'][$option[0]]['prefix'] . $option[0]] = $option[1];
+                    $this->queryOptions[$this->propOptions[$prop]['prefix'] . $option[0]] = $option[1];
                 }
             }
         }

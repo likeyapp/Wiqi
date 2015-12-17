@@ -57,6 +57,13 @@ class Wiqi
         
         return $this;
     }
+
+    public function prop($prop, $options)
+    {
+        $this->wiqiControl->setProp( $prop, $options );
+
+        return $this;
+    }
     
     public function get()
     {
