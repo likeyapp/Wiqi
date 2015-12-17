@@ -18,3 +18,5 @@ Composer:
 
 ### Usage
 
+### License
+Copyright 2015 Likey, LLC.
