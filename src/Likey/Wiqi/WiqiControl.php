@@ -196,7 +196,9 @@ class WiqiControl
             if (empty($this->queryOptions['prop'])){
                 $this->queryOptions['prop'] = '';
             }
-            $this->queryOptions['prop'] += (empty($this->queryOptions['prop'])?'':'|') . $prop;
+            if (strpos($this->queryOptions['prop'],$prop) == false){
+                $this->queryOptions['prop'] += (empty($this->queryOptions['prop'])?'':'|') . $prop;
+            }
             
             foreach( $options as $option ) {
                 if( in_array( $option[0], array_keys( $this->propOptions[$prop]['params'] ) ) ) {

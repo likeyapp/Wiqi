@@ -26,7 +26,8 @@ class Wiqi
     
     public function plaintext()
     {
-        $this->wiqiControl->setExtractsPlainText( true );
+        $this->wiqiControl->setProp('extracts',[['plaintext',true]]);
+        
         return $this;
     }
     
