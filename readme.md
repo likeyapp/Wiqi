@@ -44,6 +44,7 @@ Example:
 ```
 
 ### Usage
+
 ##### May change since in-dev.
 
 #### get() - Return Array of Query Result:
