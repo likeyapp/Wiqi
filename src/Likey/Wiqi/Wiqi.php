@@ -23,6 +23,17 @@ class Wiqi
     {
         $this->wiqiControl = new wiqiControl;
     }
+
+    public function query( $query )
+    {
+        if (is_string($query)){
+            $this->wiqiControl->setTitles( $query );
+        } else {
+            $this->wiqiControl->setPageids( $query );
+        }
+        
+        return $this;
+    }
     
     public function plaintext()
     {
@@ -37,37 +48,62 @@ class Wiqi
         
         return $this;
     }
-    
-    public function search( $search )
+
+    public function brief()
     {
-        $this->wiqiControl->setTitles( $search );
-        
+        $this->wiqiControl->setProp('extracts',[['sentences',1],['plaintext',true]]);
+        $this->wiqiControl->setProp('pageimages',[['prop','original']]);
+
+        return $this;
+    }
+
+    public function withImage()
+    {
+        $this->wiqiControl->setProp('pageimages',[['prop','original']]);
+
         return $this;
     }
     
     public function sentences( $sentences )
     {
-        $this->wiqiControl->setExtractsSentences( $sentences );
+        $this->wiqiControl->setProp('extracts',[['sentences',$sentences]]);
         
         return $this;
     }
     
     public function chars( $chars )
     {
-        $this->wiqiControl->setExtractsChars( $chars );
+        $this->wiqiControl->setProp('extracts',[['chars',$chars]]);
         
         return $this;
     }
 
-    public function prop($prop, $options)
+    public function prop($prop, $options = [])
     {
         $this->wiqiControl->setProp( $prop, $options );
 
         return $this;
     }
+
+    public function count( $limit )
+    {
+        $this->wiqiControl->setLimits($limit);
+
+        return $this;
+    }
     
+    public function source()
+    {
+        return $this->wiqiControl->getSourceResponse();
+    }
+
     public function get()
     {
         return $this->wiqiControl->get();
+    }
+
+    public function getDis()
+    {
+        return $this->wiqiControl->getDis();
     }
 }
