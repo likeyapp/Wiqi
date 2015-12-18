@@ -1,6 +1,6 @@
 {
     "name": "likey/wiqi",
-    "description": "WIkipedia Query Interface: Laravel 5 package to perform different Wikipedia API Queries.",
+    "description": "Wiqi - Wikipedia api Query Interface: Laravel 5 package to perform 'action=query' requests to the Wikipedia API with ease.",
     "authors": [
         {
             "name": "Keal Jones @ Likey",
