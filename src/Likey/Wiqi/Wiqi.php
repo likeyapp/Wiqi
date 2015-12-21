@@ -51,7 +51,7 @@ class Wiqi
 
     public function brief()
     {
-        $this->wiqiControl->setProp('extracts',[['sentences',1],['plaintext',true]]);
+        $this->wiqiControl->setProp('extracts',[['sentences',2],['plaintext',true]]);
         $this->wiqiControl->setProp('pageimages',[['prop','original']]);
 
         return $this;
@@ -85,7 +85,7 @@ class Wiqi
         return $this;
     }
 
-    public function count( $limit )
+    public function limit( $limit )
     {
         $this->wiqiControl->setLimits($limit);
 

@@ -2,21 +2,22 @@
 /**
  * Class and Function List:
  * Function list:
- * - __toString()
  * - getSourceResponse()
  * - get()
  * - getQueryUrl()
  * - getQueryString()
- * - getFormat()
- * - setFormat()
  * - setTitles()
  * - setPageids()
  * - getTitles()
+ * - setParams()
+ * - setParam()
  * - setProp()
  * - getProps()
  * - setLimits()
  * - errors()
- * - isDisambig()
+ * - isDis()
+ * - getDis()
+ * - getWithDis()
  * - cleanResult()
  * Classes list:
  * - WiqiControl
@@ -26,25 +27,15 @@ namespace Likey\Wiqi;
 class WiqiControl
 {
     
-    protected $baseApi = "http://en.wikipedia.org/w/api.php";
+    protected $baseApi = 'http://en.wikipedia.org/w/api.php';
     
-    protected $queryRequired = array(
+    protected $queryParamsRequired = array(
         'action' => 'query',
+        'redirects' => true,
     );
     
-    protected $queryOptions = array(
+    protected $queryParams = array(
         'format' => 'json',
-    );
-    
-    protected $formatOptions = array(
-        'json',
-        'xml',
-        'php',
-        'none',
-        'jsonfm',
-        'rawfm',
-        'phpfm',
-        'xmlfm',
     );
     
     protected $propOptions = array(
@@ -159,27 +150,34 @@ class WiqiControl
         */
     );
     
-    protected $sourceResponse = null;
-    protected $hasDis = false;
-    protected $count = false;
-    
-    public function __toString()
-    {
-        return $this->get();
-    }
+    protected $wiqiRuntime = array(
+        'hasDis' => false,
+        'checkDis' => true,
+        'resultsCount' => 10,
+        'addedLimit' => 5,
+    );
     
     public function getSourceResponse()
     {
-        return $sourceResponse = file_get_contents( $this->getQueryUrl() );
+        
+        return file_get_contents( $this->getQueryUrl() );
     }
     
     public function get()
     {
-        if( $this->getFormat() == 'json' ) {
-            return $this->cleanResult();
-        } 
-        else if( $sourceResponse ) {
-            return $sourceResponse;
+        if( $this->queryParams['format'] == 'json' ) {
+            
+            //var_dump($this->isDis());
+            if( $this->isDis() ) {
+                $disArray = $this->getDis();
+                $returnArray = $disArray + $this->cleanResult();
+                array_unique( $returnArray, SORT_REGULAR );
+                return $returnArray;
+            } 
+            else {
+                $returnArray = $this->cleanResult();
+            }
+            return $returnArray;
         } 
         else {
             return $this->getSourceResponse();
@@ -193,52 +191,47 @@ class WiqiControl
     
     public function getQueryString()
     {
-        return http_build_query( array_merge( $this->queryOptions, $this->queryRequired ) );
-    }
-    
-    public function getFormat()
-    {
-        return $this->queryOptions["format"];
-    }
-    
-    public function setFormat( $format )
-    {
-        return( !in_array( $format, $this->formatOptions ) ? false : $this->queryOptions["format"] = $format );
+        return http_build_query( array_merge( $this->queryParams, $this->queryParamsRequired ) );
     }
     
     public function setTitles( $titles )
     {
-        $title = ucfirst( $titles );
-        $this->queryOptions["titles"] = $title;
-
-        $this->checkDis();
-
-        return $this->queryOptions["titles"];
+        return $this->queryParams['titles'] = ucfirst( $titles );
     }
     
     public function setPageids( $ids )
     {
-        return $this->queryOptions["pageids"] = $ids;
+        return $this->queryParams['pageids'] = $ids;
     }
     
     public function getTitles()
     {
-        return( $this->queryOptions["titles"] ? $this->queryOptions["titles"] : false );
+        return( $this->queryParams['titles'] ? $this->queryParams['titles'] : null );
+    }
+    
+    public function setParams( $qstr )
+    {
+        return parse_str( $qstr, $this->queryParams );
+    }
+    
+    public function setParam( $name, $value )
+    {
+        return $this->setParams( $name . '=' . $value );
     }
     
     public function setProp( $prop, $options )
     {
         if( in_array( $prop, array_keys( $this->propOptions ) ) ) {
-            if( empty( $this->queryOptions['prop'] ) ) {
-                $this->queryOptions['prop'] = '';
+            if( empty( $this->queryParams['prop'] ) ) {
+                $this->queryParams['prop'] = '';
             }
-            if( strpos( $this->queryOptions['prop'], $prop ) === false ) {
-                $this->queryOptions['prop'].=( empty( $this->queryOptions['prop'] ) ? '' : '|' ) . $prop;
+            if( strpos( $this->queryParams['prop'], $prop ) === false ) {
+                $this->queryParams['prop'].=( empty( $this->queryParams['prop'] ) ? '' : '|' ) . $prop;
             }
             
             foreach( $options as $option ) {
                 if( in_array( $option[0], array_keys( $this->propOptions[$prop]['params'] ) ) ) {
-                    $this->queryOptions[$this->propOptions[$prop]['prefix'] . $option[0]] = $option[1];
+                    $this->queryParams[$this->propOptions[$prop]['prefix'] . $option[0]] = $option[1];
                 }
             }
         }
@@ -246,34 +239,43 @@ class WiqiControl
     
     public function getProps()
     {
-        if( empty( $this->queryOptions['prop'] ) ) {
+        if( empty( $this->queryParams['prop'] ) ) {
             return false;
         } 
         else {
-            return explode( "|", $this->queryOptions['prop'] );
+            return explode( '|', $this->queryParams['prop'] );
         }
     }
     
-    public function setLimits( $limit )
+    public function setLimits( $limit = null )
     {
-        $limit = ($this->hasDis ? $limit+1 : $limit);
-        $this->count = $limit;
+        if( $limit == null ) {
+            $limit = $this->wiqiRuntime['resultsCount'];
+        }
+        
+        $this->wiqiRuntime['resultsCount'] = $limit + $this->wiqiRuntime['addedLimit'];
+        
         if( $props = $this->getProps() ) {
             foreach( $props as $prop ) {
                 if( !empty( $this->propOptions[$prop]['params']['limit'] ) ) {
-                    $this->setProp( $prop, [['limit', $limit]] );
+                    $this->setProp( $prop, [['limit', $this->wiqiRuntime['resultsCount']]] );
                 }
                 if( $prop == 'extracts' ) {
-                    $this->queryOptions['exintro'] = true;
+                    $this->queryParams['exintro'] = true;
                 }
             }
         }
         
-        if( !empty( $this->queryOptions["titles"] ) ) {
-            $this->queryOptions['generator'] = 'prefixsearch';
-            $this->queryOptions['gpssearch'] = $this->queryOptions["titles"];
-            $this->queryOptions['gpslimit'] = $limit;
+        if( !empty( $this->queryParams['titles'] ) ) {
+            $this->queryParams['generator'] = 'prefixsearch';
+            $this->queryParams['gpssearch'] = $this->queryParams['titles'];
+            $this->queryParams['gpslimit'] = $this->wiqiRuntime['resultsCount'];
         }
+    }
+
+    public function getLimits()
+    {
+        return $this->wiqiRuntime['resultsCount'] - $this->wiqiRuntime['addedLimit'];
     }
     
     public function errors( $errors )
@@ -283,72 +285,123 @@ class WiqiControl
         );
     }
     
-    public function checkDis()
+    public function isDis()
     {
-        
-        if( $this->getTitles() ) {
-            $results = json_decode( file_get_contents( $this->baseApi . '?action=query&format=json&prop=pageprops&ppprop=disambiguation&titles=' . $this->queryOptions["titles"] ), true );
-            $results = array_values( $results['query']['pages'] );
-            if( array_key_exists( 'pageprops', $results[0] ) ) {
-                $this->hasDis = $results[0]['pageid'];
-                return true;
-            } 
-            else {
-                return false;
-            }
-        } 
-        else {
-            print_r( $this->errors( ['No Title to check. Disambiguation Checks only work with string searches.'] ) );
-        }
-    }
-
-    public function getDis(){
-        if ($this->hasDis){
-            $tempTitles = $this->getTitles();
-            unset($this->queryOptions['titles']);
-            $this->setPageids($this->hasDis);
-            $this->queryOptions['generator'] = 'links';
-            if ($this->count){
-                $this->queryOptions['gpllimit'] = $this->count;
+        if( $this->wiqiRuntime['checkDis'] ) {
+            if( $this->getTitles() ) {
+                $results = json_decode( file_get_contents( $this->baseApi . '?action=query&format=json&prop=pageprops&ppprop=disambiguation&titles=' . rawurlencode( $this->queryParams['titles'] ) ), true );
+                if( !empty( $results['query']['pages'] ) ) {
+                    $results = array_values( $results['query']['pages'] );
+                    if( array_key_exists( 'pageprops', $results[0] ) ) {
+                        $this->wiqiRuntime['hasDis'] = $results[0]['pageid'];
+                        return true;
+                    }
+                }
             }
         }
-        return $this->cleanResult();
         
+        return false;
     }
-
+    
+    public function getDis()
+    {
+        if( $this->isDis() ) {
+            $tempOptions = $this->queryParams;
+            unset( $this->queryParams['gpslimit'] );
+            unset( $this->queryParams['gpssearch'] );
+            unset( $this->queryParams['titles'] );
+            $this->setPageids( $this->wiqiRuntime['hasDis'] );
+            $this->queryParams['generator'] = 'links';
+            $this->queryParams['redirects'] = true;
+            
+            //$this->queryParams['gpldir'] = 'descending';
+            if( $this->wiqiRuntime['resultsCount'] ) {
+                $this->queryParams['gpllimit'] = $this->wiqiRuntime['resultsCount'];
+            }
+            
+            $disResults = $this->cleanResult();
+            
+            $this->queryParams = $tempOptions;
+            
+            return $disResults;
+        }
+    }
+    
     public function getWithDis()
     {
-       // if ()
+        
+        // if ()
+        
+        
     }
     
     public function cleanResult()
     {
+        $redirectIndex = false;
+        $this->setLimits();
         $source = json_decode( $this->getSourceResponse() , true );
-        //print_r($source);
-        $results = array_values( $source['query']['pages'] );
+        if( !empty( $source['query']['redirects'] ) ) {
+            $redirects = array_column( $source['query']['redirects'], 'index' );
+            $redirectIndex = array_combine( $redirects, array_keys( $redirects ) );
+        }
+        if( !empty( $source['query']['pages'] ) ) {
+            $results = $source['query']['pages'];
             foreach( $results as $key => $row ) {
-                if ( !empty($results[$key]['extract']) && $this->hasDis){
-                    if ( strrpos($results[$key]['extract'], 'could refer to a:') !== false ){
+                
+                // Remove Results that seem like Disambiguation Pages
+                if( isset( $results[$key]['extract'] ) ) {
+                    if( strrpos( $results[$key]['extract'], 'refer to' ) !== false ) {
                         unset( $results[$key] );
                         continue;
-                    } 
+                    }
                 }
-                if( !empty( $row['index'] ) ) {
-                    $sort[$key] = $row['index'];
-                    unset( $results[$key]['index'] );
+                if( isset( $results[$key]['title'] ) ) {
+                    if( strrpos( $results[$key]['title'], 'isambiguation' ) !== false ) {
+                        unset( $results[$key] );
+                        continue;
+                    }
                 }
-                if( !empty($row['thumbnail']) ){
-                    $results[$key]['image'] = $results[$key]['thumbnail']['original'];
-                    unset( $results[$key]['thumbnail'] );
+                
+                // Replace sub array with string to image
+                if( isset( $results[$key]['thumbnail']['original'] ) ) {
+                    $results[$key]['thumbnail'] = $results[$key]['thumbnail']['original'];
                 }
-                unset( $results[$key]['ns'] );
+                
+                // Remove the namespace param
+                if( isset( $results[$key]['ns'] ) ) {
+                    unset( $results[$key]['ns'] );
+                }
+                
+                // Setup Array to Sort by 'index' and add Redirect Titles
+                if( isset( $results[$key]['index'] ) ) {
+                    if( isset( $redirectIndex[$results[$key]['index']] ) ) {
+                        $results[$key]['title'] = $source['query']['redirects'][$redirectIndex[$results[$key]['index']]]['from'] . " (" . $results[$key]['title'] . ")";
+                    }
+                    $sort[$key] = $results[$key]['index'];
+                }
+                
+                // Remove the index
+                unset( $results[$key]['index'] );
             }
-            if (!$this->hasDis) {
-                unset( $results[count($results)] );
-            }
-            if( !empty( $sort ) ) {
+            
+            // Sort the array if it was organized
+            if( isset( $sort ) ) {
                 array_multisort( $sort, SORT_ASC, $results );
             }
+            
+            // Remove lame keys
+            $results = array_values( $results );
+            
+            // Trim Results to Requested Length
+            $results = array_slice( $results, 0, $this->getLimits() );
+        } 
+        else {
+            $results = array(
+                'query' => array(
+                    'No Results.'
+                )
+            );
+        }
         
         return $results;
     }
