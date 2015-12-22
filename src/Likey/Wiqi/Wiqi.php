@@ -21,7 +21,7 @@ class Wiqi
     
     public function __construct()
     {
-        $this->wiqiControl = new wiqiControl;
+        $this->wiqiControl = new WiqiControl;
     }
 
     public function query( $query )
