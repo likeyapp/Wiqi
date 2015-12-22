@@ -51,8 +51,9 @@ class Wiqi
 
     public function brief()
     {
-        $this->wiqiControl->setProp('extracts',[['sentences',2],['plaintext',true]]);
+        $this->wiqiControl->setProp('extracts',[['sentences',1],['plaintext',true]]);
         $this->wiqiControl->setProp('pageimages',[['prop','original']]);
+        $this->wiqiControl->setProp('info',[['prop','url']]);
 
         return $this;
     }

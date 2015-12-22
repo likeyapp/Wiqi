@@ -57,7 +57,12 @@ class WiqiControl
                 'prop' => ['type' => 'string'],
             ) ,
         ) ,
-        
+        'info' => array(
+            'prefix' => 'in',
+            'params' => array(
+                'prop' => ['type'=>'string'],
+                ),
+            ),
         /* Additional Options to add.
         'categories',
         'categoryinfo',
@@ -72,7 +77,6 @@ class WiqiControl
         'globalusage',
         'imageinfo',
         'images',
-        'info',
         'iwlinks',
         'langlinks',
         'links',
@@ -164,12 +168,14 @@ class WiqiControl
     
     public function get()
     {
+
         if( $this->isDis() ) {
             $disArray = $this->getDis();
             $returnArray = $disArray + $this->cleanResult();
             array_unique( $returnArray, SORT_REGULAR );
         } 
         else {
+
             $returnArray = $this->cleanResult();
         }
         return $returnArray;
@@ -309,7 +315,7 @@ class WiqiControl
             if( $this->wiqiRuntime['resultsCount'] ) {
                 $this->queryParams['gpllimit'] = $this->wiqiRuntime['resultsCount'];
             }
-            
+            //var_dump($this->getQueryUrl());
             $disResults = $this->cleanResult();
             
             $this->queryParams = $tempOptions;
@@ -330,6 +336,7 @@ class WiqiControl
     {
         $redirectIndex = false;
         $this->setLimits();
+        //var_dump($this->getQueryUrl());
         $source = json_decode( $this->getSourceResponse() , true );
         if( !empty( $source['query']['redirects'] ) ) {
             $redirects = array_column( $source['query']['redirects'], 'index' );
@@ -366,7 +373,7 @@ class WiqiControl
                 // Setup Array to Sort by 'index' and add Redirect Titles
                 if( isset( $results[$key]['index'] ) ) {
                     if( isset( $redirectIndex[$results[$key]['index']] ) ) {
-                        $results[$key]['title'] = $source['query']['redirects'][$redirectIndex[$results[$key]['index']]]['from'] . " (" . $results[$key]['title'] . ")";
+                        $results[$key]['rename'] = $source['query']['redirects'][$redirectIndex[$results[$key]['index']]]['from']; //. " (" . $results[$key]['title'] . ")";
                     }
                     $sort[$key] = $results[$key]['index'];
                 }
