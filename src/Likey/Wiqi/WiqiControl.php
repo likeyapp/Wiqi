@@ -14,6 +14,7 @@
  * - setProp()
  * - getProps()
  * - setLimits()
+ * - getLimits()
  * - errors()
  * - isDis()
  * - getDis()
@@ -32,11 +33,10 @@ class WiqiControl
     protected $queryParamsRequired = array(
         'action' => 'query',
         'redirects' => true,
-    );
-    
-    protected $queryParams = array(
         'format' => 'json',
     );
+    
+    protected $queryParams = array();
     
     protected $propOptions = array(
         'extracts' => array(
@@ -159,29 +159,20 @@ class WiqiControl
     
     public function getSourceResponse()
     {
-        
         return file_get_contents( $this->getQueryUrl() );
     }
     
     public function get()
     {
-        if( $this->queryParams['format'] == 'json' ) {
-            
-            //var_dump($this->isDis());
-            if( $this->isDis() ) {
-                $disArray = $this->getDis();
-                $returnArray = $disArray + $this->cleanResult();
-                array_unique( $returnArray, SORT_REGULAR );
-                return $returnArray;
-            } 
-            else {
-                $returnArray = $this->cleanResult();
-            }
-            return $returnArray;
+        if( $this->isDis() ) {
+            $disArray = $this->getDis();
+            $returnArray = $disArray + $this->cleanResult();
+            array_unique( $returnArray, SORT_REGULAR );
         } 
         else {
-            return $this->getSourceResponse();
+            $returnArray = $this->cleanResult();
         }
+        return $returnArray;
     }
     
     public function getQueryUrl()
@@ -272,7 +263,7 @@ class WiqiControl
             $this->queryParams['gpslimit'] = $this->wiqiRuntime['resultsCount'];
         }
     }
-
+    
     public function getLimits()
     {
         return $this->wiqiRuntime['resultsCount'] - $this->wiqiRuntime['addedLimit'];
