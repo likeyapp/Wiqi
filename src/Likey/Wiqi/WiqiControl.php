@@ -60,9 +60,10 @@ class WiqiControl
         'info' => array(
             'prefix' => 'in',
             'params' => array(
-                'prop' => ['type'=>'string'],
-                ),
-            ),
+                'prop' => ['type' => 'string'],
+            ) ,
+        ) ,
+        
         /* Additional Options to add.
         'categories',
         'categoryinfo',
@@ -168,14 +169,14 @@ class WiqiControl
     
     public function get()
     {
-
+        
         if( $this->isDis() ) {
             $disArray = $this->getDis();
             $returnArray = $disArray + $this->cleanResult();
             array_unique( $returnArray, SORT_REGULAR );
         } 
         else {
-
+            
             $returnArray = $this->cleanResult();
         }
         return $returnArray;
@@ -203,7 +204,12 @@ class WiqiControl
     
     public function getTitles()
     {
-        return( $this->queryParams['titles'] ? $this->queryParams['titles'] : null );
+        if( isset( $this->queryParams['titles'] ) ) {
+            return $this->queryParams['titles'];
+        } 
+        else {
+            return $this->queryParams['pageids'];
+        }
     }
     
     public function setParams( $qstr )
@@ -286,7 +292,13 @@ class WiqiControl
     {
         if( $this->wiqiRuntime['checkDis'] ) {
             if( $this->getTitles() ) {
-                $results = json_decode( file_get_contents( $this->baseApi . '?action=query&format=json&prop=pageprops&ppprop=disambiguation&titles=' . rawurlencode( $this->queryParams['titles'] ) ), true );
+                if( isset( $this->queryParams['titles'] ) ) {
+                    $search = 'titles=' . rawurlencode( $this->queryParams['titles'] );
+                } 
+                else {
+                    $search = 'pageids=' . $this->queryParams['pageids'];
+                }
+                $results = json_decode( file_get_contents( $this->baseApi . '?action=query&format=json&prop=pageprops&ppprop=disambiguation&' . $search ), true );
                 if( !empty( $results['query']['pages'] ) ) {
                     $results = array_values( $results['query']['pages'] );
                     if( array_key_exists( 'pageprops', $results[0] ) ) {
@@ -315,6 +327,7 @@ class WiqiControl
             if( $this->wiqiRuntime['resultsCount'] ) {
                 $this->queryParams['gpllimit'] = $this->wiqiRuntime['resultsCount'];
             }
+            
             //var_dump($this->getQueryUrl());
             $disResults = $this->cleanResult();
             
@@ -336,6 +349,7 @@ class WiqiControl
     {
         $redirectIndex = false;
         $this->setLimits();
+        
         //var_dump($this->getQueryUrl());
         $source = json_decode( $this->getSourceResponse() , true );
         if( !empty( $source['query']['redirects'] ) ) {
@@ -373,7 +387,11 @@ class WiqiControl
                 // Setup Array to Sort by 'index' and add Redirect Titles
                 if( isset( $results[$key]['index'] ) ) {
                     if( isset( $redirectIndex[$results[$key]['index']] ) ) {
-                        $results[$key]['rename'] = $source['query']['redirects'][$redirectIndex[$results[$key]['index']]]['from']; //. " (" . $results[$key]['title'] . ")";
+                        $results[$key]['rename'] = $source['query']['redirects'][$redirectIndex[$results[$key]['index']]]['from'];
+                        
+                        //. " (" . $results[$key]['title'] . ")";
+                        
+                        
                     }
                     $sort[$key] = $results[$key]['index'];
                 }
