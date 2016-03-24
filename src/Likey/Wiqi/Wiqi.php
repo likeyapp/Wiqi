@@ -26,12 +26,14 @@ class Wiqi
 
     public function query( $query )
     {
-        if (is_string($query)){
-            $this->wiqiControl->setTitles( $query );
-        } else {
-            $this->wiqiControl->setPageids( $query );
-        }
+        $this->wiqiControl->setTitles( $query );
         
+        return $this;
+    }
+
+    public function queryId( $query ){
+        $this->wiqiControl->setPageids( $query );
+
         return $this;
     }
     
